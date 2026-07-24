@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Visual</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --fondo-app: #F5F7FA;
+            --fondo-tarjeta: #FFFFFF;
+            --borde-principal: #E9ECEF;
+            --texto-principal: #1A2332;
+            --texto-secundario: #6C757D;
+            --fondo-encabezado: #2C3E50;
+            --texto-encabezado: #FFFFFF;
+            --altura-encabezado: 50px;
+            --altura-fila: 46px;
+            --fondo-fila-par: #F8F9FA;
+            --fondo-fila-impar: #FFFFFF;
+            --borde-fila: #E9ECEF;
+            --fuente-general: 21px;
+            --fuente-encabezados: 18px;
+            --fuente-pequena: 15px;
+            --fuente-botones: 18px;
+            --fuente-selector: 21px;
+            --padding-celda: 2px 4px;
+            --ancho-columna-filtrar: 80px;
+            --min-ancho-filtrar: 60px;
+            --fondo-columna-filtrar: #FFF8DC;
+            --color-pegar: #4A90D9;
+            --color-whatsapp: #25D366;
+            --color-guardar: #F57C00;
+            --color-quitar: #DC3545;
+            --color-imprimir: #17A2B8;
+            --color-ocultar: #6F42C1;
+            --color-limpiar: #6C757D;
+            --color-ayuda: #FFC107;
+            --texto-botones: #FFFFFF;
+            --altura-botones: 44px;
+            --fondo-selector: #FFFFFF;
+            --radio-borde: 6px;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: var(--fondo-app);
+            touch-action: manipulation;
+        }
+        .app {
+            width: 100%;
+            height: 100%;
+            background: var(--fondo-tarjeta);
+            display: flex;
+            flex-direction: column;
+            padding: 6px 10px;
+            overflow: hidden;
+        }
+        .header-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0 6px 0;
+            border-bottom: 2px solid var(--borde-principal);
+            flex-shrink: 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+            min-height: var(--altura-botones);
+        }
+        .header-toolbar .titulo {
+            font-size: calc(var(--fuente-general) + 2px);
+            font-weight: 700;
+            color: var(--texto-principal);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.5;
+            flex-shrink: 0;
+        }
+        .header-toolbar .titulo .icono {
+            font-size: calc(var(--fuente-general) + 4px);
+        }
+        .header-toolbar .fecha {
+            font-size: calc(var(--fuente-pequena) - 2px);
+            font-weight: 600;
+            color: var(--texto-secundario);
+            flex-shrink: 0;
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+        .header-toolbar .fecha .dia {
+            color: var(--texto-principal);
+        }
+        .header-toolbar .botones {
+            display: flex;
+            gap: 4px;
+            flex-wrap: nowrap;
+            flex: 1;
+            justify-content: flex-end;
+            min-width: 0;
+        }
+        .header-toolbar .botones button {
+            padding: 4px 8px;
+            border: none;
+            border-radius: var(--radio-borde);
+            font-size: var(--fuente-botones);
+            font-weight: 600;
+            color: var(--texto-botones);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            min-height: var(--altura-botones);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 40px;
+        }
+        .header-toolbar .botones button:active {
+            transform: scale(0.95);
+            opacity: 0.85;
+        }
+        .btn-pegar {
+            background: var(--color-pegar);
+        }
+        .btn-whatsapp {
+            background: var(--color-whatsapp);
+        }
+        .btn-guardar {
+            background: var(--color-guardar);
+        }
+        .btn-quitar {
+            background: var(--color-quitar);
+        }
+        .btn-imprimir {
+            background: var(--color-imprimir);
+        }
+        .btn-ocultar {
+            background: var(--color-ocultar);
+        }
+        .btn-limpiar {
+            background: var(--color-limpiar);
+        }
+        .btn-ayuda {
+            background: var(--color-ayuda);
+            color: #1A2332;
+        }
+        .tabla-wrapper {
+            flex: 1;
+            overflow: auto;
+            border-radius: var(--radio-borde);
+            border: 1px solid var(--borde-principal);
+            background: var(--fondo-tarjeta);
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+            margin-top: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--fuente-general);
+            table-layout: auto;
+        }
+        thead th {
+            background: var(--fondo-encabezado);
+            color: var(--texto-encabezado);
+            font-weight: 600;
+            padding: 4px 6px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+            font-size: var(--fuente-encabezados);
+            border-right: 1px solid var(--borde-principal);
+            height: var(--altura-encabezado);
+            vertical-align: middle;
+            transition: background 0.3s;
+        }
+        thead th:last-child {
+            border-right: none;
+        }
+        thead th.filtro-activo {
+            background: #FFD700 !important;
+            color: #1A2332 !important;
+        }
+        thead th.filtro-activo .th-content .filter-icon {
+            color: #1A2332 !important;
+            opacity: 1 !important;
+        }
+        thead th .th-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        thead th .th-content .filter-icon {
+            font-size: 14px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        thead th .th-content .filter-icon:hover {
+            opacity: 1;
+        }
+        thead th .th-content .filter-icon.active {
+            opacity: 1;
+            color: #FFD700;
+        }
+        thead th.col-filtrar {
+            width: var(--ancho-columna-filtrar);
+            min-width: var(--min-ancho-filtrar);
+        }
+        thead th.col-item {
+            min-width: 55px;
+            width: 55px;
+        }
+        thead th.col-oculta,
+        tbody td.td-oculta {
+            display: none !important;
+        }
+        tbody td {
+            padding: var(--padding-celda);
+            border-bottom: 1px solid var(--borde-fila);
+            border-right: 1px solid var(--borde-fila);
+            text-align: center;
+            vertical-align: middle;
+            background: var(--fondo-fila-impar);
+            word-break: break-word;
+            font-size: var(--fuente-general);
+            height: var(--altura-fila);
+            max-height: var(--altura-fila);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        tbody td:last-child {
+            border-right: none;
+        }
+        tbody tr:nth-child(even) td {
+            background: var(--fondo-fila-par);
+        }
+        td.filtrar-cell {
+            background: var(--fondo-columna-filtrar) !important;
+            font-weight: 600;
+            color: var(--texto-principal);
+            text-align: center;
+            width: var(--ancho-columna-filtrar);
+            min-width: var(--min-ancho-filtrar);
+            font-size: var(--fuente-general);
+            cursor: text;
+            background-clip: padding-box;
+            padding: var(--padding-celda);
+        }
+        td.filtrar-cell:focus {
+            outline: 2px solid var(--color-pegar);
+            outline-offset: -2px;
+            background: #F5E6A0 !important;
+            border-radius: 2px;
+        }
+        td.solo-lectura {
+            cursor: default;
+            color: var(--texto-principal);
+            font-size: var(--fuente-general);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            padding: var(--padding-celda);
+        }
+        tr.fila-oculta {
+            display: none !important;
+        }
+        .selector-flotante {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--fondo-selector);
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            padding: 16px 16px 24px;
+            z-index: 999;
+            animation: slideUp 0.2s ease-out;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        .selector-flotante h3 {
+            font-size: var(--fuente-selector);
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--texto-principal);
+            text-align: center;
+        }
+        .selector-flotante .opciones {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .selector-flotante .opcion {
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: var(--borde-principal);
+            font-size: var(--fuente-selector);
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.1s;
+            border: none;
+            width: 100%;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .selector-flotante .opcion:active {
+            background: #DEE2E6;
+            transform: scale(0.97);
+        }
+        .selector-flotante .opcion.todos {
+            background: #E9ECEF;
+            color: var(--texto-principal);
+            font-weight: 600;
+        }
+        .selector-flotante .opcion.vacio {
+            background: #FFF3CD;
+            color: #856404;
+            font-weight: 600;
+        }
+        .selector-flotante .opcion.vacio::before {
+            content: "⚪ ";
+        }
+        .selector-flotante .opcion.todos::before {
+            content: "📋 ";
+        }
+        .selector-flotante .opcion.valor {
+            background: var(--fondo-fila-par);
+            color: var(--texto-principal);
+        }
+        .selector-flotante .opcion.valor.activo {
+            background: var(--color-pegar);
+            color: #FFFFFF;
+        }
+        .selector-flotante .btn-cerrar {
+            margin-top: 12px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: var(--borde-principal);
+            font-size: var(--fuente-selector);
+            font-weight: 600;
+            color: var(--texto-principal);
+            width: 100%;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .selector-flotante .btn-cerrar:active {
+            background: #DEE2E6;
+        }
+        .menu-ocultar {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--fondo-selector);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 20px 24px;
+            z-index: 999;
+            max-height: 70vh;
+            overflow-y: auto;
+            min-width: 250px;
+            max-width: 90%;
+            animation: fadeIn 0.2s;
+        }
+        .menu-ocultar h3 {
+            font-size: var(--fuente-selector);
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--texto-principal);
+            text-align: center;
+        }
+        .menu-ocultar .opcion-columna {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .menu-ocultar .opcion-columna:hover {
+            background: var(--borde-principal);
+        }
+        .menu-ocultar .opcion-columna input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--color-pegar);
+        }
+        .menu-ocultar .opcion-columna label {
+            font-size: var(--fuente-pequena);
+            font-weight: 500;
+            color: var(--texto-principal);
+            cursor: pointer;
+            flex: 1;
+        }
+        .menu-ocultar .btn-cerrar-menu {
+            margin-top: 16px;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: var(--borde-principal);
+            font-size: var(--fuente-pequena);
+            font-weight: 600;
+            color: var(--texto-principal);
+            width: 100%;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .menu-ocultar .btn-cerrar-menu:active {
+            background: #DEE2E6;
+        }
+        .modal-ayuda {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s;
+        }
+        .modal-ayuda .modal-contenido {
+            background: #FFFFFF;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .modal-ayuda .modal-contenido h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--texto-principal);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .modal-ayuda .modal-contenido .seccion-ayuda {
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--borde-principal);
+            padding-bottom: 12px;
+        }
+        .modal-ayuda .modal-contenido .seccion-ayuda:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .modal-ayuda .modal-contenido .seccion-ayuda h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--texto-principal);
+            margin-bottom: 4px;
+        }
+        .modal-ayuda .modal-contenido .seccion-ayuda p {
+            font-size: 14px;
+            color: var(--texto-secundario);
+            line-height: 1.5;
+        }
+        .modal-ayuda .modal-contenido .btn-cerrar-ayuda {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 16px;
+            border: none;
+            border-radius: 10px;
+            background: var(--color-pegar);
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .modal-ayuda .modal-contenido .btn-cerrar-ayuda:active {
+            transform: scale(0.95);
+            opacity: 0.85;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 998;
+            animation: fadeIn 0.15s;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .status {
+            margin-top: 4px;
+            padding: 6px 12px;
+            border-radius: var(--radio-borde);
+            background: var(--borde-principal);
+            font-size: calc(var(--fuente-pequena) - 2px);
+            color: var(--texto-principal);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px;
+            flex-shrink: 0;
+            min-height: calc(var(--altura-botones) - 10px);
+            align-items: center;
+        }
+        .status .contador {
+            font-weight: 600;
+            color: var(--color-pegar);
+        }
+        .status .filtros-activos {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .status .filtro-tag {
+            background: var(--color-pegar);
+            color: #FFFFFF;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .status .filtro-tag .quitar-tag {
+            cursor: pointer;
+            font-weight: 700;
+            opacity: 0.8;
+        }
+        .status .filtro-tag .quitar-tag:hover {
+            opacity: 1;
+        }
+        .status .btn-quitar-filtros {
+            background: #DC3545;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: none;
+            touch-action: manipulation;
+        }
+        .status .btn-quitar-filtros:active {
+            transform: scale(0.95);
+            opacity: 0.85;
+        }
+        .status .columnas-ocultas-msg {
+            font-size: 10px;
+            color: var(--texto-secundario);
+            margin-left: 8px;
+        }
+        @media print {
+            body {
+                background: #FFFFFF !important;
+                overflow: visible !important;
+            }
+            .app {
+                padding: 0 !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            .header-toolbar .botones {
+                display: none !important;
+            }
+            .header-toolbar .fecha {
+                background: transparent !important;
+                padding: 0 !important;
+                font-size: 14px !important;
+            }
+            .header-toolbar .titulo {
+                opacity: 1 !important;
+                font-size: 20px !important;
+            }
+            .status {
+                display: none !important;
+            }
+            .tabla-wrapper {
+                border: none !important;
+                border-radius: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            table {
+                font-size: 12px !important;
+                width: 100% !important;
+            }
+            thead th {
+                background: #2C3E50 !important;
+                color: #FFFFFF !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                height: 30px !important;
+                font-size: 11px !important;
+                padding: 4px 6px !important;
+            }
+            tbody td {
+                height: 28px !important;
+                font-size: 12px !important;
+                padding: 2px 6px !important;
+                border-bottom: 1px solid #E9ECEF !important;
+            }
+            tbody tr:nth-child(even) td {
+                background: #F8F9FA !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            td.filtrar-cell {
+                background: #FFF8DC !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .menu-ocultar,
+            .overlay,
+            .selector-flotante,
+            .modal-ayuda {
+                display: none !important;
+            }
+            .th-content .filter-icon {
+                display: none !important;
+            }
+            thead th.col-oculta,
+            tbody td.td-oculta {
+                display: none !important;
+            }
+            .tabla-wrapper {
+                overflow: visible !important;
+                border: none !important;
+            }
+            .app {
+                overflow: visible !important;
+            }
+            @page {
+                margin: 10mm;
+                size: landscape;
+            }
+        }
+        @media (orientation: portrait) {
+            :root {
+                --fuente-general: 16px;
+                --fuente-encabezados: 14px;
+                --fuente-pequena: 12px;
+                --fuente-botones: 14px;
+                --fuente-selector: 16px;
+                --altura-fila: 34px;
+                --altura-encabezado: 40px;
+                --altura-botones: 34px;
+                --padding-celda: 2px 3px;
+                --ancho-columna-filtrar: 60px;
+                --min-ancho-filtrar: 50px;
+            }
+            .header-toolbar .titulo {
+                font-size: 14px;
+                opacity: 0.6;
+            }
+            .header-toolbar .titulo .icono {
+                font-size: 16px;
+            }
+            .header-toolbar .fecha {
+                font-size: 10px;
+            }
+            .header-toolbar .botones {
+                gap: 3px;
+            }
+            .header-toolbar .botones button {
+                font-size: 12px;
+                padding: 2px 5px;
+                min-height: 30px;
+                min-width: 30px;
+                flex: 1 1 auto;
+            }
+            .status {
+                font-size: 10px;
+                padding: 3px 8px;
+                min-height: 26px;
+            }
+            thead th.col-filtrar {
+                width: var(--ancho-columna-filtrar);
+                min-width: var(--min-ancho-filtrar);
+                font-size: 12px;
+            }
+            thead th.col-item {
+                min-width: 38px;
+                width: 38px;
+                font-size: 12px;
+            }
+            td.filtrar-cell {
+                width: var(--ancho-columna-filtrar);
+                min-width: var(--min-ancho-filtrar);
+                font-size: 15px;
+                padding: var(--padding-celda);
+            }
+            td.solo-lectura {
+                font-size: 15px;
+                padding: var(--padding-celda);
+            }
+            .selector-flotante .opcion {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+            .menu-ocultar {
+                padding: 14px;
+                min-width: 180px;
+            }
+            .menu-ocultar h3 {
+                font-size: 14px;
+            }
+            .menu-ocultar .opcion-columna label {
+                font-size: 11px;
+            }
+            .header-toolbar {
+                gap: 4px;
+                padding: 2px 0 4px 0;
+                min-height: 34px;
+            }
+            .modal-ayuda .modal-contenido {
+                padding: 16px;
+            }
+            .modal-ayuda .modal-contenido h2 {
+                font-size: 18px;
+            }
+            .modal-ayuda .modal-contenido .seccion-ayuda h3 {
+                font-size: 14px;
+            }
+            .modal-ayuda .modal-contenido .seccion-ayuda p {
+                font-size: 12px;
+            }
+        }
+        @media (orientation: landscape) {
+            :root {
+                --fuente-general: 21px;
+                --fuente-encabezados: 18px;
+                --fuente-pequena: 15px;
+                --fuente-botones: 18px;
+                --fuente-selector: 21px;
+                --altura-fila: 46px;
+                --altura-encabezado: 50px;
+                --altura-botones: 44px;
+                --padding-celda: 2px 4px;
+                --ancho-columna-filtrar: 80px;
+                --min-ancho-filtrar: 60px;
+            }
+            .header-toolbar .titulo {
+                font-size: 23px;
+                opacity: 0.5;
+            }
+            .header-toolbar .titulo .icono {
+                font-size: 25px;
+            }
+            .header-toolbar .fecha {
+                font-size: 13px;
+            }
+            .header-toolbar .botones button {
+                font-size: 16px;
+                padding: 4px 10px;
+                min-height: 40px;
+                min-width: 44px;
+            }
+            .status {
+                font-size: 13px;
+                padding: 5px 12px;
+                min-height: 34px;
+            }
+            thead th.col-filtrar {
+                width: var(--ancho-columna-filtrar);
+                min-width: var(--min-ancho-filtrar);
+            }
+            thead th.col-item {
+                min-width: 55px;
+                width: 55px;
+            }
+            td.filtrar-cell {
+                width: var(--ancho-columna-filtrar);
+                min-width: var(--min-ancho-filtrar);
+                font-size: 21px;
+                padding: var(--padding-celda);
+            }
+            td.solo-lectura {
+                font-size: 21px;
+                padding: var(--padding-celda);
+            }
+            .selector-flotante .opcion {
+                padding: 14px 18px;
+                font-size: 18px;
+            }
+            .menu-ocultar {
+                padding: 20px 24px;
+                min-width: 250px;
+            }
+            .menu-ocultar h3 {
+                font-size: 18px;
+            }
+            .menu-ocultar .opcion-columna label {
+                font-size: 14px;
+            }
+            .modal-ayuda .modal-contenido {
+                padding: 24px;
+            }
+            .modal-ayuda .modal-contenido h2 {
+                font-size: 22px;
+            }
+            .modal-ayuda .modal-contenido .seccion-ayuda h3 {
+                font-size: 16px;
+            }
+            .modal-ayuda .modal-contenido .seccion-ayuda p {
+                font-size: 14px;
+            }
+        }
+        @media (max-width: 480px) and (orientation: portrait) {
+            :root {
+                --fuente-general: 13px;
+                --fuente-encabezados: 11px;
+                --fuente-pequena: 9px;
+                --fuente-botones: 11px;
+                --fuente-selector: 13px;
+                --altura-fila: 26px;
+                --altura-encabezado: 30px;
+                --altura-botones: 26px;
+                --padding-celda: 1px 2px;
+                --ancho-columna-filtrar: 44px;
+                --min-ancho-filtrar: 38px;
+            }
+            .header-toolbar .titulo {
+                font-size: 11px;
+            }
+            .header-toolbar .titulo .icono {
+                font-size: 13px;
+            }
+            .header-toolbar .fecha {
+                font-size: 8px;
+            }
+            .header-toolbar .botones button {
+                font-size: 9px;
+                padding: 1px 3px;
+                min-height: 22px;
+                min-width: 22px;
+            }
+            .status {
+                font-size: 8px;
+                padding: 2px 6px;
+                min-height: 18px;
+            }
+            thead th.col-filtrar {
+                width: var(--ancho-columna-filtrar);
+                min-width: var(--min-ancho-filtrar);
+                font-size: 9px;
+                padding: 2px 3px;
+            }
+            thead th.col-item {
+                min-width: 26px;
+                width: 26px;
+                font-size: 9px;
+                padding: 2px 3px;
+            }
+            td.filtrar-cell {
+                width: var(--ancho-columna-filtrar);
+                min-width: var(--min-ancho-filtrar);
+                font-size: 11px;
+                padding: var(--padding-celda);
+            }
+            td.solo-lectura {
+                font-size: 11px;
+                padding: var(--padding-celda);
+            }
+            .selector-flotante h3 {
+                font-size: 13px;
+            }
+            .selector-flotante .opcion {
+                font-size: 13px;
+                padding: 8px 10px;
+            }
+            .selector-flotante .btn-cerrar {
+                font-size: 13px;
+                padding: 8px;
+            }
+            .menu-ocultar {
+                padding: 10px;
+                min-width: 140px;
+            }
+            .menu-ocultar h3 {
+                font-size: 12px;
+            }
+            .menu-ocultar .opcion-columna label {
+                font-size: 10px;
+            }
+            .header-toolbar {
+                gap: 3px;
+                padding: 1px 0 3px 0;
+                min-height: 26px;
+            }
+            .modal-ayuda .modal-contenido {
+                padding: 12px;
+            }
+            .modal-ayuda .modal-contenido h2 {
+                font-size: 16px;
+            }
+            .modal-ayuda .modal-contenido .seccion-ayuda h3 {
+                font-size: 12px;
+            }
+            .modal-ayuda .modal-contenido .seccion-ayuda p {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <div class="header-toolbar">
+            <span class="titulo"><span class="icono">👑</span>Visual</span>
+            <span class="fecha" id="fechaTitulo"><span class="dia" id="diaSemana">Jue</span> <span id="fechaFormateada">24-Jul</span></span>
+            <div class="botones">
+                <button class="btn-pegar" onclick="abrirPegado()">Pegar</button>
+                <button class="btn-whatsapp" onclick="enviarWhatsApp()">Enviar</button>
+                <button class="btn-guardar" onclick="guardarExcel()">Guardar</button>
+                <button class="btn-quitar" onclick="abrirQuitarFila()">Quitar</button>
+                <button class="btn-imprimir" onclick="imprimir()">🖨️</button>
+                <button class="btn-ocultar" onclick="toggleMenuOcultar()">Ocultar</button>
+                <button class="btn-limpiar" onclick="limpiarTabla()">Limpiar</button>
+                <button class="btn-ayuda" onclick="abrirAyuda()">❓</button>
+            </div>
+        </div>
+        <div class="tabla-wrapper" id="tablaWrapper">
+            <table id="tabla">
+                <thead id="thead"></thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+        <div class="status" id="statusBar">
+            <span>📌 <span id="statusText">Listo</span></span>
+            <span id="filtrosInfo">
+                <span id="filtrosTagsContainer"></span>
+                <button class="btn-quitar-filtros" id="btnQuitarFiltros" onclick="quitarTodosFiltros()">✕ Quitar filtros</button>
+                <span class="columnas-ocultas-msg" id="columnasOcultasMsg"></span>
+                Filas: <span class="contador" id="contadorFilas">0</span> / 50
+            </span>
+        </div>
+    </div>
+    <div class="modal-ayuda" id="modalAyuda">
+        <div class="modal-contenido">
+            <h2>❓ Ayuda de Visual</h2>
+            <div class="seccion-ayuda">
+                <h3>📋 Pegar</h3>
+                <p>Pega datos copiados desde WhatsApp (con formato de tabla usando "|"). La columna "Filtrar" quedará vacía para que la edites manualmente.</p>
+            </div>
+            <div class="seccion-ayuda">
+                <h3>📤 Enviar</h3>
+                <p>Envía los datos por WhatsApp. Solo se envían las filas con datos (sin encabezados, sin fecha). El receptor puede copiarlos y pegarlos en su Visualizador.</p>
+            </div>
+            <div class="seccion-ayuda">
+                <h3>💾 Guardar</h3>
+                <p>Guarda los datos en tu dispositivo como archivo Excel (.xlsx) y también los guarda localmente en el navegador (localStorage).</p>
+            </div>
+            <div class="seccion-ayuda">
+                <h3>🗑️ Quitar</h3>
+                <p>Elimina la fila seleccionada de la tabla. No se puede eliminar la última fila con datos.</p>
+            </div>
+            <div class="seccion-ayuda">
+                <h3>🖨️ Imprimir</h3>
+                <p>Abre el diálogo de impresión del navegador para imprimir la tabla visible (sin botones ni elementos de interfaz).</p>
+            </div>
+            <div class="seccion-ayuda">
+                <h3>📋 Ocultar</h3>
+                <p>Muestra un menú para ocultar o mostrar columnas de la tabla. Las columnas ocultas no se ven ni se imprimen.</p>
+            </div>
+            <div class="seccion-ayuda">
+                <h3>🧹 Limpiar</h3>
+                <p>Elimina todos los datos de la tabla y los reemplaza con 5 filas de ejemplo (con la columna "Filtrar" vacía).</p>
+            </div>
+            <div class="seccion-ayuda">
+                <h3>🔍 Filtrar (columna Filtrar)</h3>
+                <p>La columna "Filtrar" es editable y permite asignar un nombre o etiqueta a cada fila (por ejemplo, el nombre del conductor o un estado). Además, al hacer clic en el icono 🔍 en los encabezados, puedes filtrar la tabla por cualquier columna.</p>
+            </div>
+            <button class="btn-cerrar-ayuda" onclick="cerrarAyuda()">✕ Cerrar</button>
+        </div>
+    </div>
+    <div class="overlay" id="overlay" style="display:none;" onclick="cerrarSelector(); cerrarMenuOcultar();"></div>
+    <div class="selector-flotante" id="selectorFlotante" style="display:none;">
+        <h3 id="selectorTitulo">Selecciona una opción</h3>
+        <div class="opciones" id="opcionesContainer"></div>
+        <button class="btn-cerrar" onclick="cerrarSelector()">✕ Cerrar</button>
+    </div>
+    <div class="menu-ocultar" id="menuOcultar" style="display:none;">
+        <h3>📋 Mostrar columnas</h3>
+        <div id="listaColumnas"></div>
+        <button class="btn-cerrar-menu" onclick="cerrarMenuOcultar()">✕ Cerrar</button>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="leerExcel(event)">
+    <script>
+        const CONFIG = { columnasItems: 20, filasMax: 50, storageKey: 'visualizador_admin_datos' };
+        let datos = [],
+            filtros = {},
+            columnasVisibles = { driver: true },
+            selectorActivo = null;
+        for (let j = 0; j < CONFIG.columnasItems; j++) columnasVisibles['item-' + j] = true;
+
+        function init() {
+            actualizarFecha();
+            cargarDesdeLocalStorage();
+            renderizarTabla();
+            actualizarStatus('Listo');
+        }
+
+        function actualizarFecha() {
+            const ahora = new Date(),
+                dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+                meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            document.getElementById('diaSemana').textContent = dias[ahora.getDay()];
+            document.getElementById('fechaFormateada').textContent =
+                String(ahora.getDate()).padStart(2, '0') + '-' + meses[ahora.getMonth()];
+        }
+
+        function guardarEnLocalStorage() {
+            try {
+                localStorage.setItem(CONFIG.storageKey, JSON.stringify({ datos, columnasVisibles, timestamp: new Date()
+                        .toISOString() }));
+                actualizarStatus('💾 Datos guardados localmente');
+            } catch (e) { console.warn(e); }
+        }
+
+        function cargarDesdeLocalStorage() {
+            try {
+                const stored = localStorage.getItem(CONFIG.storageKey);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed.datos && Array.isArray(parsed.datos)) {
+                        datos = parsed.datos;
+                        if (parsed.columnasVisibles) columnasVisibles = parsed.columnasVisibles;
+                        actualizarStatus('📂 Datos cargados localmente');
+                        return true;
+                    }
+                }
+            } catch (e) { console.warn(e); }
+            crearTablaConEjemplos(5);
+            return false;
+        }
+
+        function crearTablaConEjemplos(filas) {
+            datos = [];
+            const ejemplos = [
+                { driver: '', items: ['8:00', 'Cliente A', ''] },
+                { driver: '', items: ['9:30', 'Cliente B', ''] },
+                { driver: '', items: ['11:00', 'Cliente C', ''] },
+                { driver: '', items: ['14:00', 'Cliente D', ''] },
+                { driver: '', items: ['16:00', 'Cliente E', ''] }
+            ];
+            for (let i = 0; i < filas; i++) {
+                const items = [];
+                const ejemplo = ejemplos[i % ejemplos.length] || { driver: '', items: [] };
+                for (let j = 0; j < CONFIG.columnasItems; j++) items.push(ejemplo.items[j] || '');
+                datos.push({ driver: '', items });
+            }
+            renderizarTabla();
+            guardarEnLocalStorage();
+        }
+
+        function renderizarTabla() {
+            const thead = document.getElementById('thead');
+            const tbody = document.getElementById('tbody');
+            const columnasConDatos = new Set();
+            datos.forEach(fila => {
+                for (let j = 0; j < CONFIG.columnasItems; j++) {
+                    if (fila.items[j] && fila.items[j].trim() !== '') columnasConDatos.add(j);
+                }
+            });
+            const columnasItems = Array.from(columnasConDatos).sort((a, b) => a - b);
+            if (columnasItems.length === 0 && CONFIG.columnasItems > 0) columnasItems.push(0);
+
+            let headerHTML = `<tr>`;
+            const claseFiltrar = columnasVisibles.driver ? 'col-filtrar' : 'col-filtrar col-oculta';
+            const filtroActivoDriver = filtros['driver'] ? 'filtro-activo' : '';
+            headerHTML += `<th class="${claseFiltrar} ${filtroActivoDriver}">
+                            <div class="th-content" onclick="abrirSelectorFiltro('driver')">
+                                Filtrar <span class="filter-icon ${filtros['driver'] ? 'active' : ''}" id="filter-icon-driver">🔍</span>
+                            </div>
+                        </th>`;
+            columnasItems.forEach(j => {
+                const key = 'item-' + j;
+                const claseItem = columnasVisibles[key] ? 'col-item' : 'col-item col-oculta';
+                const filtroActivo = filtros[key] ? 'filtro-activo' : '';
+                headerHTML += `<th class="${claseItem} ${filtroActivo}">
+                                <div class="th-content" onclick="abrirSelectorFiltro('${key}')">
+                                    Item ${j+1} <span class="filter-icon ${filtros[key] ? 'active' : ''}" id="filter-icon-${key}">🔍</span>
+                                </div>
+                            </th>`;
+            });
+            headerHTML += `</tr>`;
+            thead.innerHTML = headerHTML;
+
+            let bodyHTML = '';
+            let filasMostradas = 0;
+            datos.forEach((fila, idx) => {
+                let pasaFiltro = true;
+                if (filtros['driver']) {
+                    const v = filtros['driver'];
+                    if (v === '__vacio__') { if (fila.driver.trim() !== '') pasaFiltro = false; } else { if (fila
+                            .driver.toLowerCase() !== v.toLowerCase()) pasaFiltro = false; }
+                }
+                columnasItems.forEach(j => {
+                    const key = 'item-' + j;
+                    if (filtros[key]) {
+                        const v = filtros[key],
+                            celda = fila.items[j] || '';
+                        if (v === '__vacio__') { if (celda.trim() !== '') pasaFiltro = false; } else { if (celda
+                                .toLowerCase() !== v.toLowerCase()) pasaFiltro = false; }
+                    }
+                });
+                if (!pasaFiltro) { bodyHTML += `<tr class="fila-oculta" data-fila="${idx}">`; } else { filasMostradas++;
+                    bodyHTML += `<tr data-fila="${idx}">`; }
+                const claseTdFiltrar = columnasVisibles.driver ? 'filtrar-cell' : 'filtrar-cell td-oculta';
+                bodyHTML += `<td class="${claseTdFiltrar}" contenteditable="true" 
+                                data-fila="${idx}" data-col="driver"
+                                oninput="actualizarDriver(${idx}, this.textContent)">${fila.driver}</td>`;
+                columnasItems.forEach(j => {
+                    const key = 'item-' + j;
+                    const claseTdItem = columnasVisibles[key] ? 'solo-lectura' : 'solo-lectura td-oculta';
+                    bodyHTML += `<td class="${claseTdItem}">${fila.items[j] || ''}</td>`;
+                });
+                bodyHTML += `</tr>`;
+            });
+            tbody.innerHTML = bodyHTML;
+            document.getElementById('contadorFilas').textContent = filasMostradas;
+            document.querySelectorAll('.filter-icon').forEach(el => {
+                const id = el.id;
+                if (id) {
+                    const key = id.replace('filter-icon-', '');
+                    if (filtros[key]) el.classList.add('active');
+                    else el.classList.remove('active');
+                }
+            });
+            actualizarTagsFiltros();
+            actualizarColumnasOcultas();
+        }
+
+        function abrirSelectorFiltro(key) {
+            selectorActivo = 'filtro';
+            const overlay = document.getElementById('overlay'),
+                selector = document.getElementById('selectorFlotante'),
+                titulo = document.getElementById('selectorTitulo'),
+                container = document.getElementById('opcionesContainer');
+            const valores = new Set();
+            const esDriver = (key === 'driver');
+            datos.forEach(fila => {
+                let valor = esDriver ? fila.driver.trim() : (fila.items[parseInt(key.split('-')[1])] || '').trim();
+                if (valor !== '') valores.add(valor);
+            });
+            const valoresArray = Array.from(valores).sort();
+            let html = '';
+            html += `<button class="opcion todos" onclick="aplicarFiltro('${key}', null)">Todos</button>`;
+            html += `<button class="opcion vacio" onclick="aplicarFiltro('${key}', '__vacio__')">Vacío</button>`;
+            if (valoresArray.length > 0) html += `<div style="border-top:1px solid #E9ECEF; margin:4px 0;"></div>`;
+            valoresArray.forEach(valor => {
+                const activo = (filtros[key] === valor) ? 'activo' : '';
+                html +=
+                    `<button class="opcion valor ${activo}" onclick="aplicarFiltro('${key}', '${valor}')">${valor}</button>`;
+            });
+            if (valoresArray.length === 0) html +=
+                `<div style="text-align:center; color:#6C757D; padding:12px;">No hay valores</div>`;
+            container.innerHTML = html;
+            titulo.textContent = '🔍 Filtrar ' + (esDriver ? 'Filtrar' : 'Item ' + (parseInt(key.split('-')[1]) + 1));
+            overlay.style.display = 'block';
+            selector.style.display = 'block';
+        }
+
+        function aplicarFiltro(key, valor) {
+            if (valor === null) delete filtros[key];
+            else filtros[key] = valor;
+            cerrarSelector();
+            renderizarTabla();
+            const total = document.querySelectorAll('#tbody tr:not(.fila-oculta)').length;
+            actualizarStatus('🔍 Filtro: ' + total + ' / ' + datos.length);
+            guardarEnLocalStorage();
+        }
+
+        function quitarTodosFiltros() {
+            filtros = {};
+            renderizarTabla();
+            actualizarStatus('✅ Todos los filtros removidos');
+            guardarEnLocalStorage();
+        }
+
+        function actualizarTagsFiltros() {
+            const container = document.getElementById('filtrosTagsContainer'),
+                btn = document.getElementById('btnQuitarFiltros');
+            container.innerHTML = '';
+            const keys = Object.keys(filtros);
+            if (keys.length === 0) { btn.style.display = 'none'; return; }
+            btn.style.display = 'inline-block';
+            keys.forEach(key => {
+                const valor = filtros[key];
+                let label = key === 'driver' ? 'Filtrar' : 'Item ' + (parseInt(key.split('-')[1]) + 1);
+                let displayValor = valor === '__vacio__' ? '⚪ Vacío' : valor;
+                const tag = document.createElement('span');
+                tag.className = 'filtro-tag';
+                tag.innerHTML = label + ': ' + displayValor +
+                    ' <span class="quitar-tag" onclick="quitarFiltro(\'' + key + '\')">✕</span>';
+                container.appendChild(tag);
+            });
+        }
+
+        function quitarFiltro(key) {
+            delete filtros[key];
+            renderizarTabla();
+            const total = document.querySelectorAll('#tbody tr:not(.fila-oculta)').length;
+            actualizarStatus('✅ Filtro removido: ' + total + ' filas');
+            guardarEnLocalStorage();
+        }
+
+        function actualizarColumnasOcultas() {
+            const ocultas = Object.keys(columnasVisibles).filter(k => !columnasVisibles[k]);
+            const msg = document.getElementById('columnasOcultasMsg');
+            msg.textContent = ocultas.length > 0 ? '🔒 ' + ocultas.length + ' columna(s) oculta(s)' : '';
+        }
+
+        function actualizarDriver(fila, valor) {
+            if (datos[fila]) { datos[fila].driver = valor; if (filtros['driver']) renderizarTabla();
+                guardarEnLocalStorage(); }
+        }
+
+        function quitarFila(indice) {
+            if (datos.length <= 1) { actualizarStatus('⚠️ No se puede eliminar la última fila'); return; }
+            datos.splice(indice, 1);
+            renderizarTabla();
+            actualizarStatus('✅ Fila eliminada');
+            guardarEnLocalStorage();
+        }
+
+        function limpiarTabla() {
+            if (!confirm('¿Borrar todos los datos?')) return;
+            crearTablaConEjemplos(5);
+            filtros = {};
+            renderizarTabla();
+            actualizarStatus('Tabla limpiada');
+            guardarEnLocalStorage();
+        }
+
+        function abrirQuitarFila() {
+            selectorActivo = 'quitar';
+            const overlay = document.getElementById('overlay'),
+                selector = document.getElementById('selectorFlotante'),
+                titulo = document.getElementById('selectorTitulo'),
+                container = document.getElementById('opcionesContainer');
+            const filasConDatos = [];
+            datos.forEach((fila, idx) => {
+                const tieneDatos = fila.driver.trim() !== '' || fila.items.some(item => item && item.trim() !== '');
+                if (tieneDatos) filasConDatos.push(idx);
+            });
+            if (filasConDatos.length === 0) { actualizarStatus('⚠️ No hay filas para eliminar'); return; }
+            if (filasConDatos.length === 1) { actualizarStatus('⚠️ No se puede eliminar la última fila'); return; }
+            titulo.textContent = 'Selecciona la fila a eliminar';
+            let html = '';
+            filasConDatos.forEach(idx => {
+                const fila = datos[idx];
+                const preview = fila.driver || 'Sin filtrar';
+                html += `<button class="opcion valor" onclick="quitarFila(${idx})">${preview}</button>`;
+            });
+            container.innerHTML = html;
+            overlay.style.display = 'block';
+            selector.style.display = 'block';
+        }
+
+        function toggleMenuOcultar() {
+            const menu = document.getElementById('menuOcultar'),
+                overlay = document.getElementById('overlay');
+            if (menu.style.display === 'block') { cerrarMenuOcultar(); return; }
+            const lista = document.getElementById('listaColumnas');
+            let html = '';
+            const checkedFiltrar = columnasVisibles.driver ? 'checked' : '';
+            html += `<div class="opcion-columna" onclick="toggleColumna('driver', event)">
+                        <input type="checkbox" ${checkedFiltrar} id="chk-driver"><label for="chk-driver">Filtrar</label>
+                    </div>`;
+            const columnasConDatos = new Set();
+            datos.forEach(fila => {
+                for (let j = 0; j < CONFIG.columnasItems; j++) {
+                    if (fila.items[j] && fila.items[j].trim() !== '') columnasConDatos.add(j);
+                }
+            });
+            const columnasItems = Array.from(columnasConDatos).sort((a, b) => a - b);
+            if (columnasItems.length === 0 && CONFIG.columnasItems > 0) columnasItems.push(0);
+            columnasItems.forEach(j => {
+                const key = 'item-' + j,
+                    checked = columnasVisibles[key] ? 'checked' : '';
+                html += `<div class="opcion-columna" onclick="toggleColumna('${key}', event)">
+                            <input type="checkbox" ${checked} id="chk-${key}"><label for="chk-${key}">Item ${j+1}</label>
+                        </div>`;
+            });
+            lista.innerHTML = html;
+            overlay.style.display = 'block';
+            menu.style.display = 'block';
+        }
+
+        function toggleColumna(key, event) {
+            const checkbox = event.currentTarget.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = !checkbox.checked;
+            const nuevoEstado = checkbox ? checkbox.checked : false;
+            columnasVisibles[key] = nuevoEstado;
+            renderizarTabla();
+            guardarEnLocalStorage();
+        }
+
+        function cerrarMenuOcultar() {
+            document.getElementById('menuOcultar').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        function imprimir() { window.print(); }
+
+        function cerrarSelector() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('selectorFlotante').style.display = 'none';
+            selectorActivo = null;
+        }
+
+        function abrirAyuda() {
+            document.getElementById('modalAyuda').style.display = 'flex';
+        }
+
+        function cerrarAyuda() {
+            document.getElementById('modalAyuda').style.display = 'none';
+        }
+
+        function guardarExcel() {
+            try {
+                guardarEnLocalStorage();
+                const excelData = [
+                    ['Filtrar', ...Array.from({ length: CONFIG.columnasItems }, (_, i) => 'Item ' + (i + 1))]
+                ];
+                datos.forEach(fila => {
+                    excelData.push([fila.driver, ...fila.items]);
+                });
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(excelData);
+                XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbout], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                const ahora = new Date();
+                link.download = 'visual_' + ahora.getFullYear() + '-' +
+                    String(ahora.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(ahora.getDate()).padStart(2, '0') + '.xlsx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                actualizarStatus('💾 Archivo guardado y datos locales actualizados');
+            } catch (error) { alert('❌ Error: ' + error.message); }
+        }
+
+        function cargarExcel() { document.getElementById('fileInput').click(); }
+
+        function leerExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const hoja = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(hoja, { header: 1 });
+                    if (!json || json.length === 0) { alert('Archivo vacío'); return; }
+                    const nuevosDatos = [];
+                    let inicioDatos = 0;
+                    const primeraFila = json[0] || [];
+                    const esEncabezado = primeraFila.some(celda =>
+                        typeof celda === 'string' && celda.toLowerCase().includes('filtrar')
+                    );
+                    if (esEncabezado) inicioDatos = 1;
+                    for (let i = inicioDatos; i < json.length && nuevosDatos.length < CONFIG.filasMax; i++) {
+                        const fila = json[i] || [];
+                        const driver = '';
+                        const items = [];
+                        const offset = (primeraFila.length > 0 && primeraFila[0]?.toLowerCase().includes('filtrar')) ? 1 :
+                            0;
+                        for (let j = 0; j < CONFIG.columnasItems; j++) {
+                            const idx = offset + j;
+                            items.push((fila[idx] !== undefined && fila[idx] !== null) ? String(fila[idx]) : '');
+                        }
+                        const tieneDatos = items.some(item => item !== '');
+                        if (tieneDatos) nuevosDatos.push({ driver, items });
+                    }
+                    if (nuevosDatos.length > 0) {
+                        datos = nuevosDatos;
+                        filtros = {};
+                        for (let j = 0; j < CONFIG.columnasItems; j++) columnasVisibles['item-' + j] = true;
+                        renderizarTabla();
+                        guardarEnLocalStorage();
+                        actualizarStatus('✅ Archivo cargado: ' + file.name);
+                    } else {
+                        crearTablaConEjemplos(5);
+                        actualizarStatus('⚠️ No se detectaron datos');
+                    }
+                } catch (error) { alert('❌ Error: ' + error.message); }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        function abrirPegado() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText =
+                `position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:9998; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s;`;
+            const dialog = document.createElement('div');
+            dialog.style.cssText =
+                `background:#FFFFFF; border-radius:16px; padding:20px; max-width:95%; width:500px; max-height:80vh; box-shadow:0 10px 40px rgba(0,0,0,0.2); display:flex; flex-direction:column; animation:slideUp 0.25s ease-out;`;
+            const titulo = document.createElement('h3');
+            titulo.textContent = '📋 Pegar datos desde WhatsApp';
+            titulo.style.cssText =
+                `font-size:18px; font-weight:600; color:#1A2332; margin:0 0 8px 0; text-align:center;`;
+            dialog.appendChild(titulo);
+            const instrucciones = document.createElement('p');
+            instrucciones.textContent = 'Copia los datos desde WhatsApp y pégalos aquí. La columna "Filtrar" quedará vacía.';
+            instrucciones.style.cssText =
+                `font-size:14px; color:#6C757D; text-align:center; margin:0 0 12px 0;`;
+            dialog.appendChild(instrucciones);
+            const textarea = document.createElement('textarea');
+            textarea.style.cssText =
+                `width:100%; height:200px; padding:12px; font-size:16px; font-family:monospace; border:2px solid #E9ECEF; border-radius:8px; resize:vertical; background:#F8F9FA; color:#1A2332; outline:none;`;
+            textarea.placeholder = 'Pega aquí los datos copiados de WhatsApp...';
+            dialog.appendChild(textarea);
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText =
+                `display:flex; gap:10px; margin-top:12px; justify-content:flex-end;`;
+            const btnCancelar = document.createElement('button');
+            btnCancelar.textContent = 'Cancelar';
+            btnCancelar.style.cssText =
+                `padding:10px 24px; border:none; border-radius:8px; background:#E9ECEF; color:#1A2332; font-size:16px; font-weight:600; cursor:pointer; flex:1;`;
+            btnCancelar.onclick = function() { document.body.removeChild(overlay); };
+            const btnAceptar = document.createElement('button');
+            btnAceptar.textContent = 'Aceptar';
+            btnAceptar.style.cssText =
+                `padding:10px 24px; border:none; border-radius:8px; background:#4A90D9; color:#FFFFFF; font-size:16px; font-weight:600; cursor:pointer; flex:1;`;
+            btnAceptar.onclick = function() {
+                const texto = textarea.value;
+                document.body.removeChild(overlay);
+                procesarPegado(texto);
+            };
+            btnContainer.appendChild(btnCancelar);
+            btnContainer.appendChild(btnAceptar);
+            dialog.appendChild(btnContainer);
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            setTimeout(() => textarea.focus(), 100);
+        }
+
+        function procesarPegado(texto) {
+            if (!texto || texto.trim() === '') { actualizarStatus('⚠️ No se pegó nada'); return; }
+            const lineas = texto.split('\n').filter(line => line.trim() !== '');
+            if (lineas.length === 0) { actualizarStatus('⚠️ No hay datos'); return; }
+            const nuevosDatos = [];
+            let inicioDatos = 0;
+            const primeraLinea = lineas[0] || '';
+            if (primeraLinea.includes('Filtrar') || primeraLinea.includes('Item') || primeraLinea.includes('---')) {
+                inicioDatos = 1;
+            }
+            for (let i = inicioDatos; i < lineas.length && nuevosDatos.length < CONFIG.filasMax; i++) {
+                const linea = lineas[i];
+                let celdas;
+                if (linea.includes('|')) celdas = linea.split('|').map(c => c.trim());
+                else if (linea.includes('\t')) celdas = linea.split('\t').map(c => c.trim());
+                else celdas = linea.split(/\s{2,}/).filter(c => c.trim() !== '');
+                if (celdas.every(c => c === '---' || c === '')) continue;
+                if (celdas.length === 0) continue;
+                const driver = '';
+                const items = [];
+                for (let j = 0; j < CONFIG.columnasItems; j++) {
+                    items.push((j < celdas.length) ? celdas[j] : '');
+                }
+                const tieneDatos = items.some(item => item !== '');
+                if (tieneDatos) nuevosDatos.push({ driver, items });
+            }
+            if (nuevosDatos.length > 0) {
+                datos = nuevosDatos;
+                filtros = {};
+                for (let j = 0; j < CONFIG.columnasItems; j++) columnasVisibles['item-' + j] = true;
+                renderizarTabla();
+                guardarEnLocalStorage();
+                actualizarStatus('✅ Datos pegados: ' + nuevosDatos.length + ' filas');
+            } else {
+                actualizarStatus('⚠️ No se detectaron datos');
+            }
+        }
+
+        function enviarWhatsApp() {
+            const columnasActivas = [];
+            datos.forEach(fila => {
+                for (let j = 0; j < CONFIG.columnasItems; j++) {
+                    if (fila.items[j] && fila.items[j].trim() !== '') {
+                        if (!columnasActivas.includes(j)) columnasActivas.push(j);
+                    }
+                }
+            });
+            if (columnasActivas.length === 0) {
+                actualizarStatus('⚠️ No hay datos para enviar');
+                return;
+            }
+            let mensaje = '';
+            datos.forEach(fila => {
+                let row = fila.driver || '';
+                columnasActivas.forEach(j => {
+                    row += ' | ' + (fila.items[j] || '');
+                });
+                mensaje += row + '\n';
+            });
+            mensaje = mensaje.trim();
+            if (!mensaje) {
+                actualizarStatus('⚠️ No hay datos para enviar');
+                return;
+            }
+            if (mensaje.length > 65000) {
+                mensaje = mensaje.substring(0, 64000) + '\n\n... (truncado)';
+            }
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            let url;
+            if (isMobile) {
+                url = 'https://wa.me/?text=' + encodeURIComponent(mensaje);
+            } else {
+                url = 'https://web.whatsapp.com/send?text=' + encodeURIComponent(mensaje);
+            }
+            window.open(url, '_blank');
+            actualizarStatus('📤 Mensaje enviado a WhatsApp');
+        }
+
+        function actualizarStatus(texto) { document.getElementById('statusText').textContent = texto; }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
